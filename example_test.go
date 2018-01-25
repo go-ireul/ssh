@@ -1,40 +1,40 @@
-package ssh_test
+package sshd_test
 
 import (
 	"io"
 	"io/ioutil"
 
-	"github.com/gliderlabs/ssh"
+	"ireul.com/sshd"
 )
 
 func ExampleListenAndServe() {
-	ssh.ListenAndServe(":2222", func(s ssh.Session) {
+	sshd.ListenAndServe(":2222", func(s sshd.Session) {
 		io.WriteString(s, "Hello world\n")
 	})
 }
 
 func ExamplePasswordAuth() {
-	ssh.ListenAndServe(":2222", nil,
-		ssh.PasswordAuth(func(ctx ssh.Context, pass string) bool {
+	sshd.ListenAndServe(":2222", nil,
+		sshd.PasswordAuth(func(ctx sshd.Context, pass string) bool {
 			return pass == "secret"
 		}),
 	)
 }
 
 func ExampleNoPty() {
-	ssh.ListenAndServe(":2222", nil, ssh.NoPty())
+	sshd.ListenAndServe(":2222", nil, sshd.NoPty())
 }
 
 func ExamplePublicKeyAuth() {
-	ssh.ListenAndServe(":2222", nil,
-		ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+	sshd.ListenAndServe(":2222", nil,
+		sshd.PublicKeyAuth(func(ctx sshd.Context, key sshd.PublicKey) bool {
 			data, _ := ioutil.ReadFile("/path/to/allowed/key.pub")
-			allowed, _, _, _, _ := ssh.ParseAuthorizedKey(data)
-			return ssh.KeysEqual(key, allowed)
+			allowed, _, _, _, _ := sshd.ParseAuthorizedKey(data)
+			return sshd.KeysEqual(key, allowed)
 		}),
 	)
 }
 
 func ExampleHostKeyFile() {
-	ssh.ListenAndServe(":2222", nil, ssh.HostKeyFile("/path/to/host/key"))
+	sshd.ListenAndServe(":2222", nil, sshd.HostKeyFile("/path/to/host/key"))
 }

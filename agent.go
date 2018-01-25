@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"io"
@@ -7,7 +7,7 @@ import (
 	"path"
 	"sync"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -51,7 +51,7 @@ func NewAgentListener() (net.Listener, error) {
 // session on the OpenSSH channel for agent connections. It blocks and services
 // connections until the listener stop accepting.
 func ForwardAgentConnections(l net.Listener, s Session) {
-	sshConn := s.Context().Value(ContextKeyConn).(gossh.Conn)
+	sshConn := s.Context().Value(ContextKeyConn).(ssh.Conn)
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -64,7 +64,7 @@ func ForwardAgentConnections(l net.Listener, s Session) {
 				return
 			}
 			defer channel.Close()
-			go gossh.DiscardRequests(reqs)
+			go ssh.DiscardRequests(reqs)
 			var wg sync.WaitGroup
 			wg.Add(2)
 			go func() {

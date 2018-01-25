@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 // ErrServerClosed is returned by the Server's Serve, ListenAndServe,
@@ -37,12 +37,12 @@ type Server struct {
 
 	mu        sync.Mutex
 	listeners map[net.Listener]struct{}
-	conns     map[*gossh.ServerConn]struct{}
+	conns     map[*ssh.ServerConn]struct{}
 	doneChan  chan struct{}
 }
 
 // internal for now
-type channelHandler func(srv *Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx Context)
+type channelHandler func(srv *Server, conn *ssh.ServerConn, newChan ssh.NewChannel, ctx Context)
 
 func (srv *Server) ensureHostSigner() error {
 	if len(srv.HostSigners) == 0 {
@@ -55,12 +55,12 @@ func (srv *Server) ensureHostSigner() error {
 	return nil
 }
 
-func (srv *Server) config(ctx Context) *gossh.ServerConfig {
+func (srv *Server) config(ctx Context) *ssh.ServerConfig {
 	srv.channelHandlers = map[string]channelHandler{
 		"session":      sessionHandler,
 		"direct-tcpip": directTcpipHandler,
 	}
-	config := &gossh.ServerConfig{}
+	config := &ssh.ServerConfig{}
 	for _, signer := range srv.HostSigners {
 		config.AddHostKey(signer)
 	}
@@ -71,7 +71,7 @@ func (srv *Server) config(ctx Context) *gossh.ServerConfig {
 		config.ServerVersion = "SSH-2.0-" + srv.Version
 	}
 	if srv.PasswordHandler != nil {
-		config.PasswordCallback = func(conn gossh.ConnMetadata, password []byte) (*gossh.Permissions, error) {
+		config.PasswordCallback = func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			applyConnMetadata(ctx, conn)
 			if ok := srv.PasswordHandler(ctx, string(password)); !ok {
 				return ctx.Permissions().Permissions, fmt.Errorf("permission denied")
@@ -80,7 +80,7 @@ func (srv *Server) config(ctx Context) *gossh.ServerConfig {
 		}
 	}
 	if srv.PublicKeyHandler != nil {
-		config.PublicKeyCallback = func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
+		config.PublicKeyCallback = func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			applyConnMetadata(ctx, conn)
 			if ok := srv.PublicKeyHandler(ctx, key); !ok {
 				return ctx.Permissions().Permissions, fmt.Errorf("permission denied")
@@ -213,7 +213,7 @@ func (srv *Server) handleConn(newConn net.Conn) {
 		conn.maxDeadline = time.Now().Add(srv.MaxTimeout)
 	}
 	defer conn.Close()
-	sshConn, chans, reqs, err := gossh.NewServerConn(conn, srv.config(ctx))
+	sshConn, chans, reqs, err := ssh.NewServerConn(conn, srv.config(ctx))
 	if err != nil {
 		// TODO: trigger event callback
 		return
@@ -224,11 +224,11 @@ func (srv *Server) handleConn(newConn net.Conn) {
 
 	ctx.SetValue(ContextKeyConn, sshConn)
 	applyConnMetadata(ctx, sshConn)
-	go gossh.DiscardRequests(reqs)
+	go ssh.DiscardRequests(reqs)
 	for ch := range chans {
 		handler, found := srv.channelHandlers[ch.ChannelType()]
 		if !found {
-			ch.Reject(gossh.UnknownChannelType, "unsupported channel type")
+			ch.Reject(ssh.UnknownChannelType, "unsupported channel type")
 			continue
 		}
 		go handler(srv, sshConn, ch, ctx)
@@ -318,11 +318,11 @@ func (srv *Server) trackListener(ln net.Listener, add bool) {
 	}
 }
 
-func (srv *Server) trackConn(c *gossh.ServerConn, add bool) {
+func (srv *Server) trackConn(c *ssh.ServerConn, add bool) {
 	srv.mu.Lock()
 	defer srv.mu.Unlock()
 	if srv.conns == nil {
-		srv.conns = make(map[*gossh.ServerConn]struct{})
+		srv.conns = make(map[*ssh.ServerConn]struct{})
 	}
 	if add {
 		srv.conns[c] = struct{}{}

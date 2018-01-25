@@ -1,11 +1,11 @@
-package ssh
+package sshd
 
 import (
 	"context"
 	"encoding/hex"
 	"net"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 // contextKey is a value for use with context.WithValue. It's used as
@@ -48,7 +48,7 @@ var (
 	ContextKeyServer = &contextKey{"ssh-server"}
 
 	// ContextKeyConn is a context key for use with Contexts in this package.
-	// The associated value will be of type gossh.Conn.
+	// The associated value will be of type ssh.Conn.
 	ContextKeyConn = &contextKey{"ssh-conn"}
 
 	// ContextKeyPublicKey is a context key for use with Contexts in this package.
@@ -96,14 +96,14 @@ func newContext(srv *Server) (*sshContext, context.CancelFunc) {
 	innerCtx, cancel := context.WithCancel(context.Background())
 	ctx := &sshContext{innerCtx}
 	ctx.SetValue(ContextKeyServer, srv)
-	perms := &Permissions{&gossh.Permissions{}}
+	perms := &Permissions{&ssh.Permissions{}}
 	ctx.SetValue(ContextKeyPermissions, perms)
 	return ctx, cancel
 }
 
 // this is separate from newContext because we will get ConnMetadata
 // at different points so it needs to be applied separately
-func applyConnMetadata(ctx Context, conn gossh.ConnMetadata) {
+func applyConnMetadata(ctx Context, conn ssh.ConnMetadata) {
 	if ctx.Value(ContextKeySessionID) != nil {
 		return
 	}

@@ -1,10 +1,10 @@
-version: 2.0
+version: 2
 jobs:
   build:
     docker:
-    - image: golang:1.8
-    working_directory: /go/src/github.com/gliderlabs/ssh
+      - image: 'golang:1.8'
+    working_directory: /go/src/ireul.com/sshd
     steps:
-    - checkout
-    - run: go get
-    - run: go test -v -race
+      - checkout
+      - run: go get
+      - run: go test -v -race

@@ -5,11 +5,11 @@ import (
 	"io"
 	"log"
 
-	"github.com/gliderlabs/ssh"
+	"ireul.com/sshd"
 )
 
 func main() {
-	ssh.Handle(func(s ssh.Session) {
+	ssh.Handle(func(s sshd.Session) {
 		io.WriteString(s, fmt.Sprintf("Hello %s\n", s.User()))
 	})
 

@@ -1,6 +1,6 @@
 /*
 
-Package ssh wraps the crypto/ssh package with a higher-level API for building
+package sshd wraps the crypto/ssh package with a higher-level API for building
 SSH servers. The goal of the API was to make it as simple as using net/http, so
 the API is very similar.
 
@@ -11,7 +11,7 @@ use crypto/ssh for building SSH clients.
 ListenAndServe starts an SSH server with a given address, handler, and options. The
 handler is usually nil, which means to use DefaultHandler. Handle sets DefaultHandler:
 
-  ssh.Handle(func(s ssh.Session) {
+  ssh.Handle(func(s sshd.Session) {
       io.WriteString(s, "Hello world\n")
   })
 
@@ -44,4 +44,4 @@ The one big feature missing from the Session abstraction is signals. This was
 started, but not completed. Pull Requests welcome!
 
 */
-package ssh
+package sshd

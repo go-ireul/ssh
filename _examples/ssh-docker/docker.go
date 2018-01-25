@@ -10,11 +10,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/gliderlabs/ssh"
+	"golang.org/x/crypto/ssh"
+	"ireul.com/sshd"
 )
 
 func main() {
-	ssh.Handle(func(sess ssh.Session) {
+	sshd.Handle(func(sess sshd.Session) {
 		_, _, isTty := sess.Pty()
 		cfg := &container.Config{
 			Image:        sess.User(),
@@ -38,10 +39,10 @@ func main() {
 	})
 
 	log.Println("starting ssh server on port 2222...")
-	log.Fatal(ssh.ListenAndServe(":2222", nil))
+	log.Fatal(sshd.ListenAndServe(":2222", nil))
 }
 
-func dockerRun(cfg *container.Config, sess ssh.Session) (status int64, cleanup func(), err error) {
+func dockerRun(cfg *container.Config, sess sshd.Session) (status int64, cleanup func(), err error) {
 	docker, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)

@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"net"
@@ -6,10 +6,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
-func newTestSessionWithOptions(t *testing.T, srv *Server, cfg *gossh.ClientConfig, options ...Option) (*gossh.Session, *gossh.Client, func()) {
+func newTestSessionWithOptions(t *testing.T, srv *Server, cfg *ssh.ClientConfig, options ...Option) (*ssh.Session, *ssh.Client, func()) {
 	for _, option := range options {
 		if err := srv.SetOption(option); err != nil {
 			t.Fatal(err)
@@ -26,12 +26,12 @@ func TestPasswordAuth(t *testing.T) {
 		Handler: func(s Session) {
 			// noop
 		},
-	}, &gossh.ClientConfig{
+	}, &ssh.ClientConfig{
 		User: testUser,
-		Auth: []gossh.AuthMethod{
-			gossh.Password(testPass),
+		Auth: []ssh.AuthMethod{
+			ssh.Password(testPass),
 		},
-		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}, PasswordAuth(func(ctx Context, password string) bool {
 		if ctx.User() != testUser {
 			t.Fatalf("user = %#v; want %#v", ctx.User(), testUser)
@@ -55,12 +55,12 @@ func TestPasswordAuthBadPass(t *testing.T) {
 		return false
 	}))
 	go srv.serveOnce(l)
-	_, err := gossh.Dial("tcp", l.Addr().String(), &gossh.ClientConfig{
+	_, err := ssh.Dial("tcp", l.Addr().String(), &ssh.ClientConfig{
 		User: "testuser",
-		Auth: []gossh.AuthMethod{
-			gossh.Password("testpass"),
+		Auth: []ssh.AuthMethod{
+			ssh.Password("testpass"),
 		},
-		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "unable to authenticate") {
@@ -87,12 +87,12 @@ func TestConnWrapping(t *testing.T) {
 		Handler: func(s Session) {
 			// nothing
 		},
-	}, &gossh.ClientConfig{
+	}, &ssh.ClientConfig{
 		User: "testuser",
-		Auth: []gossh.AuthMethod{
-			gossh.Password("testpass"),
+		Auth: []ssh.AuthMethod{
+			ssh.Password("testpass"),
 		},
-		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}, PasswordAuth(func(ctx Context, password string) bool {
 		return true
 	}), WrapConn(func(conn net.Conn) net.Conn {

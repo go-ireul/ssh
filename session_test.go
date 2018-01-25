@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net"
 	"testing"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 func (srv *Server) serveOnce(l net.Listener) error {
@@ -32,19 +32,19 @@ func newLocalListener() net.Listener {
 	return l
 }
 
-func newClientSession(t *testing.T, addr string, config *gossh.ClientConfig) (*gossh.Session, *gossh.Client, func()) {
+func newClientSession(t *testing.T, addr string, config *ssh.ClientConfig) (*ssh.Session, *ssh.Client, func()) {
 	if config == nil {
-		config = &gossh.ClientConfig{
+		config = &ssh.ClientConfig{
 			User: "testuser",
-			Auth: []gossh.AuthMethod{
-				gossh.Password("testpass"),
+			Auth: []ssh.AuthMethod{
+				ssh.Password("testpass"),
 			},
 		}
 	}
 	if config.HostKeyCallback == nil {
-		config.HostKeyCallback = gossh.InsecureIgnoreHostKey()
+		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 	}
-	client, err := gossh.Dial("tcp", addr, config)
+	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func newClientSession(t *testing.T, addr string, config *gossh.ClientConfig) (*g
 	}
 }
 
-func newTestSession(t *testing.T, srv *Server, cfg *gossh.ClientConfig) (*gossh.Session, *gossh.Client, func()) {
+func newTestSession(t *testing.T, srv *Server, cfg *ssh.ClientConfig) (*ssh.Session, *ssh.Client, func()) {
 	l := newLocalListener()
 	go srv.serveOnce(l)
 	return newClientSession(t, l.Addr().String(), cfg)
@@ -129,7 +129,7 @@ func TestUser(t *testing.T) {
 		Handler: func(s Session) {
 			io.WriteString(s, s.User())
 		},
-	}, &gossh.ClientConfig{
+	}, &ssh.ClientConfig{
 		User: string(testUser),
 	})
 	defer cleanup()
@@ -180,7 +180,7 @@ func TestExitStatusNonZero(t *testing.T) {
 	}, nil)
 	defer cleanup()
 	err := session.Run("")
-	e, ok := err.(*gossh.ExitError)
+	e, ok := err.(*ssh.ExitError)
 	if !ok {
 		t.Fatalf("expected ExitError but got %T", err)
 	}
@@ -214,7 +214,7 @@ func TestPty(t *testing.T) {
 		},
 	}, nil)
 	defer cleanup()
-	if err := session.RequestPty(term, winHeight, winWidth, gossh.TerminalModes{}); err != nil {
+	if err := session.RequestPty(term, winHeight, winWidth, ssh.TerminalModes{}); err != nil {
 		t.Fatalf("unexpected error requesting PTY", err)
 	}
 	if err := session.Shell(); err != nil {
@@ -247,7 +247,7 @@ func TestPtyResize(t *testing.T) {
 	}, nil)
 	defer cleanup()
 	// winch0
-	if err := session.RequestPty("xterm", winch0.Height, winch0.Width, gossh.TerminalModes{}); err != nil {
+	if err := session.RequestPty("xterm", winch0.Height, winch0.Width, ssh.TerminalModes{}); err != nil {
 		t.Fatalf("unexpected error requesting PTY", err)
 	}
 	if err := session.Shell(); err != nil {
@@ -259,7 +259,7 @@ func TestPtyResize(t *testing.T) {
 	}
 	// winch1
 	winchMsg := struct{ w, h uint32 }{uint32(winch1.Width), uint32(winch1.Height)}
-	ok, err := session.SendRequest("window-change", true, gossh.Marshal(&winchMsg))
+	ok, err := session.SendRequest("window-change", true, ssh.Marshal(&winchMsg))
 	if err == nil && !ok {
 		t.Fatalf("unexpected error or bad reply on send request")
 	}
@@ -269,7 +269,7 @@ func TestPtyResize(t *testing.T) {
 	}
 	// winch2
 	winchMsg = struct{ w, h uint32 }{uint32(winch2.Width), uint32(winch2.Height)}
-	ok, err = session.SendRequest("window-change", true, gossh.Marshal(&winchMsg))
+	ok, err = session.SendRequest("window-change", true, ssh.Marshal(&winchMsg))
 	if err == nil && !ok {
 		t.Fatalf("unexpected error or bad reply on send request")
 	}
@@ -303,8 +303,8 @@ func TestSignals(t *testing.T) {
 	defer cleanup()
 
 	go func() {
-		session.Signal(gossh.SIGINT)
-		session.Signal(gossh.SIGKILL)
+		session.Signal(ssh.SIGINT)
+		session.Signal(ssh.SIGKILL)
 	}()
 
 	err := session.Run("")

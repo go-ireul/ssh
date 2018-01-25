@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 var sampleServerResponse = []byte("Hello world")
@@ -28,7 +28,7 @@ func sampleSocketServer() net.Listener {
 	return l
 }
 
-func newTestSessionWithForwarding(t *testing.T, forwardingEnabled bool) (net.Listener, *gossh.Client, func()) {
+func newTestSessionWithForwarding(t *testing.T, forwardingEnabled bool) (net.Listener, *ssh.Client, func()) {
 	l := sampleSocketServer()
 
 	_, client, cleanup := newTestSession(t, &Server{

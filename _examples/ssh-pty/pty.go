@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/gliderlabs/ssh"
+	"ireul.com/sshd"
 	"github.com/kr/pty"
 )
 
@@ -19,7 +19,7 @@ func setWinsize(f *os.File, w, h int) {
 }
 
 func main() {
-	ssh.Handle(func(s ssh.Session) {
+	ssh.Handle(func(s sshd.Session) {
 		cmd := exec.Command("top")
 		ptyReq, winCh, isPty := s.Pty()
 		if isPty {

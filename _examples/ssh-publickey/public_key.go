@@ -5,13 +5,13 @@ import (
 	"io"
 	"log"
 
-	"github.com/gliderlabs/ssh"
-	gossh "golang.org/x/crypto/ssh"
+	"ireul.com/sshd"
+	"golang.org/x/crypto/ssh"
 )
 
 func main() {
-	ssh.Handle(func(s ssh.Session) {
-		authorizedKey := gossh.MarshalAuthorizedKey(s.PublicKey())
+	ssh.Handle(func(s sshd.Session) {
+		authorizedKey := ssh.MarshalAuthorizedKey(s.PublicKey())
 		io.WriteString(s, fmt.Sprintf("public key used by %s:\n", s.User()))
 		s.Write(authorizedKey)
 	})

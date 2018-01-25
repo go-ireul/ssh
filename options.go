@@ -1,9 +1,9 @@
-package ssh
+package sshd
 
 import (
 	"io/ioutil"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 // PasswordAuth returns a functional option that sets PasswordHandler on the server.
@@ -31,7 +31,7 @@ func HostKeyFile(filepath string) Option {
 			return err
 		}
 
-		signer, err := gossh.ParsePrivateKey(pemBytes)
+		signer, err := ssh.ParsePrivateKey(pemBytes)
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func HostKeyFile(filepath string) Option {
 // from a PEM file as bytes.
 func HostKeyPEM(bytes []byte) Option {
 	return func(srv *Server) error {
-		signer, err := gossh.ParsePrivateKey(bytes)
+		signer, err := ssh.ParsePrivateKey(bytes)
 		if err != nil {
 			return err
 		}

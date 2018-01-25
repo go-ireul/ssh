@@ -5,11 +5,11 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/gliderlabs/ssh"
+	"ireul.com/sshd"
 )
 
 func main() {
-	ssh.Handle(func(s ssh.Session) {
+	ssh.Handle(func(s sshd.Session) {
 		cmd := exec.Command("ssh-add", "-l")
 		if ssh.AgentRequested(s) {
 			l, err := ssh.NewAgentListener()

@@ -1,4 +1,4 @@
-package ssh
+package sshd
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/anmitsu/go-shlex"
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 // Session provides access to information about an SSH session and methods
@@ -21,7 +21,7 @@ import (
 //
 // TODO: Signals
 type Session interface {
-	gossh.Channel
+	ssh.Channel
 
 	// User returns the username used when establishing the SSH connection.
 	User() string
@@ -77,7 +77,7 @@ type Session interface {
 // when there is no signal channel specified
 const maxSigBufSize = 128
 
-func sessionHandler(srv *Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx Context) {
+func sessionHandler(srv *Server, conn *ssh.ServerConn, newChan ssh.NewChannel, ctx Context) {
 	ch, reqs, err := newChan.Accept()
 	if err != nil {
 		// TODO: trigger event callback
@@ -95,8 +95,8 @@ func sessionHandler(srv *Server, conn *gossh.ServerConn, newChan gossh.NewChanne
 
 type session struct {
 	sync.Mutex
-	gossh.Channel
-	conn    *gossh.ServerConn
+	ssh.Channel
+	conn    *ssh.ServerConn
 	handler Handler
 	handled bool
 	exited  bool
@@ -154,7 +154,7 @@ func (sess *session) Exit(code int) error {
 	sess.exited = true
 
 	status := struct{ Status uint32 }{uint32(code)}
-	_, err := sess.SendRequest("exit-status", false, gossh.Marshal(&status))
+	_, err := sess.SendRequest("exit-status", false, ssh.Marshal(&status))
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (sess *session) Signals(c chan<- Signal) {
 	}
 }
 
-func (sess *session) handleRequests(reqs <-chan *gossh.Request) {
+func (sess *session) handleRequests(reqs <-chan *ssh.Request) {
 	for req := range reqs {
 		switch req.Type {
 		case "shell", "exec":
@@ -213,7 +213,7 @@ func (sess *session) handleRequests(reqs <-chan *gossh.Request) {
 			req.Reply(true, nil)
 
 			var payload = struct{ Value string }{}
-			gossh.Unmarshal(req.Payload, &payload)
+			ssh.Unmarshal(req.Payload, &payload)
 			sess.cmd, _ = shlex.Split(payload.Value, true)
 			go func() {
 				sess.handler(sess)
@@ -225,12 +225,12 @@ func (sess *session) handleRequests(reqs <-chan *gossh.Request) {
 				continue
 			}
 			var kv struct{ Key, Value string }
-			gossh.Unmarshal(req.Payload, &kv)
+			ssh.Unmarshal(req.Payload, &kv)
 			sess.env = append(sess.env, fmt.Sprintf("%s=%s", kv.Key, kv.Value))
 			req.Reply(true, nil)
 		case "signal":
 			var payload struct{ Signal string }
-			gossh.Unmarshal(req.Payload, &payload)
+			ssh.Unmarshal(req.Payload, &payload)
 			sess.Lock()
 			if sess.sigCh != nil {
 				sess.sigCh <- Signal(payload.Signal)

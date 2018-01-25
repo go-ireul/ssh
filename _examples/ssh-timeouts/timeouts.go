@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/gliderlabs/ssh"
+	"ireul.com/sshd"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 )
 
 func main() {
-	ssh.Handle(func(s ssh.Session) {
+	ssh.Handle(func(s sshd.Session) {
 		log.Println("new connection")
 		i := 0
 		for {
